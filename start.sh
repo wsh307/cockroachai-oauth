@@ -37,8 +37,8 @@ function check_dependencies() {
 
     # 检查docker-compose是否安装
     if ! command -v docker-compose &> /dev/null; then
-        echo "docker-compose is not installed. Please install docker-compose manually."
-        exit 1
+        echo "docker-compose is not installed. Installing docker-compose..."
+        curl -fsSL https://get.docker.com | bash -s docker
     fi
 }
 
