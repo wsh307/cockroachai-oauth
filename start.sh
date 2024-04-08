@@ -85,12 +85,29 @@ function deployJA3() {
         cat /dev/urandom | tr -dc 'a-z0-9' | fold -w ${1:-16} | head -n 1
     }
 
-    # 检查端口唯一性
-    check_port_unique() {
-        while [ "$http_port" -eq "$ja3_port" ]; do
-            echo "HTTP端口和JA3端口不能相同，正在重新生成JA3端口..."
+    check_http_port() {
+        while ss -tuln | awk '{print $5}' | grep -q ":$http_port$"
+        do
+            echo "端口$http_port已被占用，正在生成新的端口..."
+            http_port=$(generate_random_port)
+        done
+        echo "HTTP端口: $http_port"
+    }
+
+    check_ja3_port() {
+        while ss -tuln | awk '{print $5}' | grep -q ":$ja3_port$"
+        do
+            echo "端口$ja3_port已被占用，正在生成新的端口..."
             ja3_port=$(generate_random_port)
         done
+        echo "JA3端口: $ja3_port"
+    }
+    check_port_unique() {
+        if [ "$http_port" = "$ja3_port" ]; then
+            echo "HTTP端口和JA3端口相同，正在生成新的HTTP端口..."
+            http_port=$(generate_random_port)
+            check_http_port
+        fi
     }
 
     # 获取当前服务器的公网IP
@@ -99,11 +116,13 @@ function deployJA3() {
     # 输入或生成HTTP端口
     read -p "请输入HTTP端口（留空自动生成）: " http_port
     http_port=${http_port:-$(generate_random_port)}
+    check_http_port
 
     # 输入或生成JA3端口
     read -p "请输入JA3端口（留空自动生成）: " ja3_port
     ja3_port=${ja3_port:-$(generate_random_port)}
     check_port_unique
+    check_ja3_port
 
     # 输入CLIENTKEY
     read -p "请输入CLIENTKEY: " clientkey
