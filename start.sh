@@ -34,6 +34,12 @@ function check_dependencies() {
             exit 1
         fi
     fi
+
+    # 检查docker-compose是否安装
+    if ! command -v docker-compose &> /dev/null; then
+        echo "docker-compose is not installed. Please install docker-compose manually."
+        exit 1
+    fi
 }
 
 function UnlockChatGPTTest() {
@@ -128,7 +134,6 @@ function deployJA3() {
     
     # 创建docker-compose.yml文件
 cat <<EOF >docker-compose.yml
-version: '3.8'
 services:
   ja3-proxy:
     image: xyhelper/ja3-proxy:latest
@@ -171,12 +176,20 @@ function viewJA3Proxy() {
     read
 }
 
+function updateJA3() {
+    docker compose pull && docker compose up -d --remove-orphans
+    echo "JA3已更新。"
+    echo "Press Enter to return to menu..."
+    read
+}
+
 function main_menu() {
     clear;
     echo -e "${GREEN}** 主菜单 **${PLAIN}"
     echo "1) 检测ChatGPT解锁"
     echo "2) 一键部署JA3"
-    echo "3) 查看JA3Proxy"
+    echo "3) 一键更新JA3" 
+    echo "4) 查看JA3Proxy" 
     echo "0) 退出"
     echo -e "${Yellow}请选择一个选项:${PLAIN}"
     read -p "> " action
@@ -184,7 +197,8 @@ function main_menu() {
     case "$action" in
         1) UnlockChatGPTTest;;
         2) deployJA3;;
-        3) viewJA3Proxy;;
+        3) updateJA3;;  
+        4) viewJA3Proxy;;
         0) exit 0;;
         *) echo -e "${RED}无效的选项，请重新输入。${PLAIN}"
            read
