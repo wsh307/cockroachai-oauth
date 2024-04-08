@@ -4,7 +4,7 @@
 
 ## ja3项目（过cockroachai的cf盾）指路[ja3-proxy](https://github.com/cockroachai/ja3-proxy)
 
-- 更新一键部署脚本
+- ja3更新一键部署脚本
 
 ```bash
 curl -sS -O https://raw.githubusercontent.com/lyy0709/cockroachai-oauth/main/start.sh && chmod +x start.sh && ./start.sh
