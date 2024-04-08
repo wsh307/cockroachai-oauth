@@ -4,6 +4,12 @@
 
 ## ja3项目（过cockroachai的cf盾）指路[ja3-proxy](https://github.com/cockroachai/ja3-proxy)
 
+- 更新一键部署脚本
+
+```bash
+curl -sS -O https://raw.githubusercontent.com/lyy0709/cockroachai-oauth/main/start.sh && chmod +x start.sh && ./start.sh
+```
+
 - 找一台可以直连oai的机器，新建一个文件夹复制以下的代码作为docker-compose.yml文件
 
 ```bash
