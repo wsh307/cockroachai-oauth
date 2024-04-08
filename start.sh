@@ -34,12 +34,6 @@ function check_dependencies() {
             exit 1
         fi
     fi
-
-    # 检查docker-compose是否安装
-    if ! command -v docker-compose &> /dev/null; then
-        echo "docker-compose is not installed. Please install docker-compose manually."
-        exit 1
-    fi
 }
 
 function UnlockChatGPTTest() {
@@ -129,7 +123,7 @@ function deployJA3() {
     fi
 
     if [ -f docker-compose.yml ]; then
-        docker-compose down
+        docker compose down
     fi
     
     # 创建docker-compose.yml文件
@@ -152,7 +146,7 @@ EOF
     echo "docker-compose.yml 文件已创建。"
 
     # 运行docker-compose
-    docker-compose up -d && echo "ja3proxy: http://$username:$password@$server_ip:${ja3_port}"
+    docker compose up -d && echo "ja3proxy: http://$username:$password@$server_ip:${ja3_port}"
 
     echo "防火墙请打开端口：$http_port 和 $ja3_port"
 
