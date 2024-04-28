@@ -75,6 +75,17 @@ function UnlockChatGPTTest() {
 
 function deployJA3() {
 
+    # 获取当前服务器的公网IP
+    server_ip=$(curl -s http://checkip.dyndns.org | awk '{print $6}' | cut -d'<' -f1)
+
+    # 检查是否成功获取到服务器的公网IP
+    if [ -z "$server_ip" ]; then
+        echo "无法获取服务器的公网IP，脚本退出。"
+        exit 1
+    else
+        echo "服务器的公网IP为: $server_ip"
+    fi
+
     # 生成随机端口函数
     generate_random_port() {
         echo $((2000 + RANDOM % 63001))
@@ -102,6 +113,7 @@ function deployJA3() {
         done
         echo "JA3端口: $ja3_port"
     }
+
     check_port_unique() {
         if [ "$http_port" = "$ja3_port" ]; then
             echo "HTTP端口和JA3端口相同，正在生成新的HTTP端口..."
@@ -109,9 +121,6 @@ function deployJA3() {
             check_http_port
         fi
     }
-
-    # 获取当前服务器的公网IP
-    server_ip=$(curl -s http://checkip.dyndns.org | awk '{print $6}' | cut -d'<' -f1)
 
     # 输入或生成HTTP端口
     read -p "请输入HTTP端口（留空自动生成）: " http_port
@@ -139,14 +148,6 @@ function deployJA3() {
     read -p "请输入JA3代理服务密码（留空自动生成）: " password
     password=${password:-$(generate_random_string 12)}
 
-    # 检查是否成功获取到服务器的公网IP
-    if [ -z "$server_ip" ]; then
-        echo "无法获取服务器的公网IP，脚本退出。"
-        exit 1
-    else
-        echo "服务器的公网IP为: $server_ip"
-    fi
-
     if [ -f docker-compose.yml ]; then
         docker compose down
     fi
@@ -160,7 +161,7 @@ services:
       - "${http_port}:3128" # HTTP端口
       - "${ja3_port}:9988" # JA3端口
     environment:
-      WEBSITE_URL: "https://chat.openai.com/auth/login"
+      WEBSITE_URL: "https://chat.openai.com/"
       PROXY: "http://$username:$password@$server_ip:${http_port}"  
       CLIENTKEY: "${clientkey}" 
       LOCALPROXYUSER: "${username}" 
@@ -173,6 +174,87 @@ EOF
     docker compose up -d && echo "ja3proxy: http://$username:$password@$server_ip:${ja3_port}"
 
     echo "防火墙请打开端口：$http_port 和 $ja3_port"
+
+    echo "http://$username:$password@$server_ip:${ja3_port}" > $proxy_info_file
+
+    echo "Deploying JA3..."
+    # Placeholder for the deployment script
+
+    echo "Press Enter to return to menu..."
+    read
+
+}
+
+function deployJA3_no_cf() {
+
+    # 获取当前服务器的公网IP
+    server_ip=$(curl -s http://checkip.dyndns.org | awk '{print $6}' | cut -d'<' -f1)
+
+    # 检查是否成功获取到服务器的公网IP
+    if [ -z "$server_ip" ]; then
+        echo "无法获取服务器的公网IP，脚本退出。"
+        exit 1
+    else
+        echo "服务器的公网IP为: $server_ip"
+    fi
+
+    # 生成随机端口函数
+    generate_random_port() {
+        echo $((2000 + RANDOM % 63001))
+    }
+
+    # 生成随机字符串函数
+    generate_random_string() {
+        cat /dev/urandom | tr -dc 'a-z0-9' | fold -w ${1:-16} | head -n 1
+    }
+
+    check_ja3_port() {
+        while ss -tuln | awk '{print $5}' | grep -q ":$ja3_port$"
+        do
+            echo "端口$ja3_port已被占用，正在生成新的端口..."
+            ja3_port=$(generate_random_port)
+        done
+        echo "JA3端口: $ja3_port"
+    }
+
+    # 输入或生成JA3端口
+    read -p "请输入JA3端口（留空自动生成）: " ja3_port
+    ja3_port=${ja3_port:-$(generate_random_port)}
+    check_ja3_port
+
+    # 输入或生成ja3代理服务用户名
+    read -p "请输入JA3代理服务用户名（留空自动生成）: " username
+    username=${username:-$(generate_random_string 8)}
+
+    # 输入或生成ja3代理服务密码
+    read -p "请输入JA3代理服务密码（留空自动生成）: " password
+    password=${password:-$(generate_random_string 12)}
+
+    if [ -f docker-compose.yml ]; then
+        docker compose down
+    fi
+    
+    # 创建docker-compose.yml文件
+cat <<EOF >docker-compose.yml
+services:
+  ja3-proxy:
+    image: xyhelper/ja3-proxy:latest
+    ports:
+      - "${ja3_port}:9988" # JA3端口
+    environment:
+      WEBSITE_URL: "https://chat.openai.com/"
+      PROXY: ""  
+      CLIENTKEY: "" 
+      LOCALPROXYUSER: "${username}" 
+      LOCALPROXYPASS: "${password}" 
+EOF
+
+    echo "docker-compose.yml 文件已创建。"
+
+    # 运行docker-compose
+    docker compose up -d && echo "ja3proxy: http://$username:$password@$server_ip:${ja3_port}"
+
+    echo "防火墙请打开端口：$ja3_port"
 
     echo "http://$username:$password@$server_ip:${ja3_port}" > $proxy_info_file
 
@@ -206,9 +288,10 @@ function main_menu() {
     clear;
     echo -e "${GREEN}** 主菜单 **${PLAIN}"
     echo "1) 检测ChatGPT解锁"
-    echo "2) 一键部署JA3"
-    echo "3) 一键更新JA3" 
-    echo "4) 查看JA3Proxy" 
+    echo "2) 一键部署JA3-过盾"
+    echo "3) 一键部署JA3-无需过盾"
+    echo "4) 一键更新JA3" 
+    echo "5) 查看JA3Proxy" 
     echo "0) 退出"
     echo -e "${Yellow}请选择一个选项:${PLAIN}"
     read -p "> " action
@@ -216,8 +299,9 @@ function main_menu() {
     case "$action" in
         1) UnlockChatGPTTest;;
         2) deployJA3;;
-        3) updateJA3;;  
-        4) viewJA3Proxy;;
+        3) deployJA3_no_cf;;
+        4) updateJA3;;  
+        5) viewJA3Proxy;;
         0) exit 0;;
         *) echo -e "${RED}无效的选项，请重新输入。${PLAIN}"
            read
