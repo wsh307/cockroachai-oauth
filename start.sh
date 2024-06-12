@@ -161,7 +161,7 @@ services:
       - "${http_port}:3128" # HTTP端口
       - "${ja3_port}:9988" # JA3端口
     environment:
-      WEBSITE_URL: "https://chat.openai.com/"
+      WEBSITE_URL: "https://chatgpt.com/?oai-dm=1"
       PROXY: "http://$username:$password@$server_ip:${http_port}"  
       CLIENTKEY: "${clientkey}" 
       LOCALPROXYUSER: "${username}" 
